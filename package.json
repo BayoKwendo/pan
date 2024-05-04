@@ -60,7 +60,7 @@
         "@types/mysql": "^2.15.21",
         "@types/node": "^20.5.0",
         "@types/supertest": "^6.0.2",
-        "chai": "^4.3.7",
+        "chai": "^5.1.0",
         "he": "^1.2.0",
         "mocha": "^10.2.0",
         "supertest": "^6.3.3",
