@@ -1,0 +1,73 @@
+##docker compose file configs
+version: '3.9'
+## create network here
+networks:
+  antheon-network:
+    driver: bridge
+
+services:
+
+  ## mongo service
+  mongodb:
+    container_name: mongodb
+    image: mongo:latest
+    restart: always
+    ports:
+      - ${MONGO_PORT}:27017
+    environment:
+      MONGO_TCP_PORT: ${MONGO_PORT}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE}
+    healthcheck:
+      # test: echo 'db.runCommand("ping").ok' | mongo 127.0.0.1:27017/pantheon --quiet 1
+      test: echo 'db.runCommand("ping").ok' --quiet 1
+      start_period: 5s
+      interval: 5s
+      timeout: 5s
+      retries: 55
+    networks:
+      - antheon-network
+      # volumes:
+      #   - ./docker-entrypoint-initdb.d/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+
+  pantheon_redis:
+    image: "bitnami/redis:latest"
+    container_name: pantheon_redis
+    # network_mode: host
+    restart: unless-stopped
+    ports:
+      - 6399:6379
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    networks:
+      - antheon-network
+      #   ## mysql service
+      # ## ## node service here
+
+  back:
+    ##  backend image created here
+    restart: always
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    environment:
+      MONGO_PORT: ${MONGO_PORT}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      REDIS_HOST: pantheon_redis
+      REDIS_PORT: 6399
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME} ##please set it as root, in docker-compose is created by default
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH: ${JWT_REFRESH}
+    network_mode: host ## to be removed after testing
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    # links:
+    #   - pantheon_redis
+    #   - mongodb
+    # ports:
+    #   - 2394:2394
+    # networks:
+    #   - antheon-network
+
